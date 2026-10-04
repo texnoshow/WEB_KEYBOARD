@@ -18,10 +18,6 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    # Создаем минимальный build.gradle на лету, если его еще нет
     - name: Create Gradle build file
       run: |
         cat << 'EOF' > build.gradle
@@ -57,7 +53,6 @@ jobs:
         }
         EOF
 
-        # Переносим существующие файлы по правильным путям Android-проекта
         mkdir -p app/src/main/java/com/example/htmlkeyboard
         mkdir -p app/src/main/res/xml
         mkdir -p app/src/main/assets
@@ -67,7 +62,6 @@ jobs:
         [ -f assets/index.html ] && mv assets/index.html app/src/main/assets/
         [ -f src/com/example/htmlkeyboard/MyKeyboardService.kt ] && mv src/com/example/htmlkeyboard/MyKeyboardService.kt app/src/main/java/com/example/htmlkeyboard/
         
-        # Создаем gradle wrapper
         gradle wrapper
     
     - name: Build Debug APK
