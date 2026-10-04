@@ -18,7 +18,7 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Create Gradle build file
+    - name: Create Project Files & Gradle Wrapper
       run: |
         cat << 'EOF' > settings.gradle
         pluginManagement {
@@ -41,7 +41,7 @@ jobs:
 
         cat << 'EOF' > build.gradle
         plugins {
-            id 'com.android.application' version '8.1.0' apply false
+            id 'com.android.application' version '8.2.0' apply false
         }
         EOF
 
@@ -62,7 +62,6 @@ jobs:
             }
         }
         dependencies {
-            // Чистый проект без сторонних зависимостей, вызывающих конфликты
         }
         EOF
 
@@ -75,7 +74,8 @@ jobs:
         [ -f assets/index.html ] && mv assets/index.html app/src/main/assets/
         [ -f src/com/example/htmlkeyboard/MyKeyboardService.kt ] && mv src/com/example/htmlkeyboard/MyKeyboardService.kt app/src/main/java/com/example/htmlkeyboard/
         
-        gradle wrapper
+        # Принудительно задаем стабильную версию Gradle 8.5 вместо девятой
+        gradle wrapper --gradle-version 8.5
     
     - name: Build Debug APK
       run: ./gradlew assembleDebug
