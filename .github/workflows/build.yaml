@@ -20,15 +20,29 @@ jobs:
 
     - name: Create Gradle build file
       run: |
+        cat << 'EOF' > settings.gradle
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = "HtmlKeyboard"
+        include ':app'
+        EOF
+
         cat << 'EOF' > build.gradle
         plugins {
             id 'com.android.application' version '8.1.0' apply false
         }
-        EOF
-
-        cat << 'EOF' > settings.gradle
-        rootProject.name = "HtmlKeyboard"
-        include ':app'
         EOF
 
         mkdir -p app
