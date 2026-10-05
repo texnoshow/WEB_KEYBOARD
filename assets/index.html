@@ -61,7 +61,7 @@
         // 🕒 ЧАСЫ
         setInterval(() => {
             const now = new Date();
-            document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
+            document.getElementById('clock').innerText = now.toTimeString().split(' ');
         }, 1000);
 
         // 🧮 КАЛЬКУЛЯТОР
@@ -73,7 +73,7 @@
             } else { if (expr === "Ошибка") expr = ""; expr += val; }
             out.value = expr;
         }
-         Miz
+
         function insertResult() {
             const val = document.getElementById('calc-display').value;
             if (val && val !== "Ошибка" && window.AndroidKeyboard?.commitText) window.AndroidKeyboard.commitText(val);
