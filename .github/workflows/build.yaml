@@ -73,7 +73,7 @@ jobs:
                 versionName "1.0"
             }
             
-            // ИСПРАВЛЕНО: Явно выравниваем версии Java до 1.8 для обоих компиляторов
+            // Явно выравниваем версии Java до 1.8 для обоих компиляторов
             compileOptions {
                 sourceCompatibility = JavaVersion.VERSION_1_8
                 targetCompatibility = JavaVersion.VERSION_1_8
@@ -100,7 +100,8 @@ jobs:
         gradle wrapper --gradle-version 8.5
     
     - name: Build Debug APK
-      run: ./gradlew assembleDebug
+      # ИСПРАВЛЕНО: Добавлена команда clean для принудительного сброса кэша перед сборкой
+      run: ./gradlew clean assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
