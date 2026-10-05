@@ -3,24 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Готовые адаптивные стили для раскладки клавиш -->
+    <link rel="stylesheet" href="https://jsdelivr.net">
     <style>
         body {
             margin: 0; background: #121212; color: #fff;
             font-family: sans-serif; display: flex; flex-direction: column; height: 250px;
-            user-select: none;
+            user-select: none; overflow: hidden;
         }
+        /* Верхняя панель управления над буквами */
         .keyboard-bar {
-            display: flex; padding: 8px; background: #1e1e1e; border-top: 1px solid #333;
+            display: flex; justify-content: space-between; padding: 6px 10px; 
+            background: #1e1e1e; border-top: 1px solid #333; align-items: center;
         }
-        button {
+        .bar-btn {
             background: #2d2d2d; color: #fff; border: 1px solid #444; 
-            padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+            padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
         }
-        button:active { background: #444; }
+        .bar-btn:active { background: #444; }
 
+        /* Кастомизация темы кнопок под Android */
+        .simple-keyboard {
+            background-color: #121212 !important;
+            font-family: sans-serif !important;
+            padding: 2px !important;
+        }
+        .simple-keyboard .hg-button {
+            background: #2d2d2d !important;
+            color: white !important;
+            border-bottom: 1px solid #1a1a1a !important;
+            height: 42px !important;
+            font-size: 15px !important;
+        }
+        .simple-keyboard .hg-button:active {
+            background: #444444 !important;
+        }
+
+        /* Экран панели виджетов (Оверлей) */
         #overlay {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); flex-direction: column; padding: 12px; box-sizing: border-box;
+            background: rgba(18, 18, 18, 0.95); flex-direction: column; padding: 12px; box-sizing: border-box;
             z-index: 100;
         }
         .content-area {
@@ -31,25 +53,110 @@
 </head>
 <body>
 
+    <!-- Основной интерфейс клавиатуры -->
     <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-        <div style="padding: 10px; color: #555; text-align: center;">[ Обычная зона клавиатуры ]</div>
         <div class="keyboard-bar">
-            <button onclick="toggleOverlay(true)">⚡ Виджеты / Панель</button>
+            <button class="bar-btn" onclick="toggleOverlay(true)">⚡ Виджеты / Панель</button>
+            <span id="lang-indicator" style="font-size: 12px; color: #888; font-weight: bold;">RU</span>
         </div>
+        
+        <!-- Сюда движок автоматически отрендерит клавиши -->
+        <div class="simple-keyboard"></div>
     </div>
 
+    <!-- Панель виджетов -->
     <div id="overlay">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px;">
-            <span style="font-size: 13px; font-weight: bold; color: #aaa;">Кастомная панель</span>
-            <button onclick="toggleOverlay(false)">✕ Закрыть</button>
+            <span style="font-size: 13px; font-weight: bold; color: #aaa;">Панель виджетов</span>
+            <button class="bar-btn" onclick="toggleOverlay(false)">✕ Закрыть</button>
         </div>
         
         <div class="content-area">
-            <button onclick="sendPayload('Привет из скрипта!')">Вставить тестовый текст</button>
+            <button class="bar-btn" onclick="sendPayload('Привет из виджета!')">Вставить тестовый текст</button>
         </div>
     </div>
 
+    <!-- Движок готовой виртуальной клавиатуры -->
+    <script src="https://jsdelivr.net"></script>
     <script>
+        const Keyboard = window.SimpleKeyboard.default;
+        
+        // Готовые наборы модулей для Русского и Английского языков
+        const layouts = {
+            ru: {
+                default: [
+                    "й ц у к е н г ш щ з х ъ",
+                    "ф ы в а п р о л д ж э",
+                    "{shift} я ч с м и т ь б ю {bksp}",
+                    "{abc} {space} {enter}"
+                ],
+                shift: [
+                    "Й Ц У К Е Н Г Ш Щ З Х Ъ",
+                    "Ф Ы В А П Р О Л Д Ж Э",
+                    "{shift} Я Ч С М И Т Ь Б Ю {bksp}",
+                    "{abc} {space} {enter}"
+                ]
+            },
+            en: {
+                default: [
+                    "q w e r t y u i o p",
+                    "a s d f g h j k l",
+                    "{shift} z x c v b n m {bksp}",
+                    "{abc} {space} {enter}"
+                ],
+                shift: [
+                    "Q W E R T Y U I O P",
+                    "A S D F G H J K L",
+                    "{shift} Z X C V B N M {bksp}",
+                    "{abc} {space} {enter}"
+                ]
+            }
+        };
+
+        let currentLanguage = "ru";
+        let currentLayout = "default";
+
+        // Запуск клавиатуры
+        const myKeyboard = new Keyboard({
+            onChange: input => {},
+            onKeyPress: button => handleKeyPress(button),
+            layout: layouts[currentLanguage],
+            display: {
+                '{bksp}': '⌫',
+                '{enter}': 'Enter',
+                '{shift}': '⇧',
+                '{space}': 'Пробел',
+                '{abc}': '🌐'
+            }
+        });
+
+        // Обработка нажатий клавиш
+        function handleKeyPress(button) {
+            if (button === "{shift}") {
+                currentLayout = currentLayout === "default" ? "shift" : "default";
+                myKeyboard.setOptions({ layoutName: currentLayout });
+            } else if (button === "{abc}") {
+                currentLanguage = currentLanguage === "ru" ? "en" : "ru";
+                document.getElementById('lang-indicator').innerText = currentLanguage.toUpperCase();
+                myKeyboard.setOptions({ layout: layouts[currentLanguage] });
+            } else if (button === "{bksp}") {
+                if (window.AndroidKeyboard) AndroidKeyboard.sendBackspace();
+            } else if (button === "{enter}") {
+                if (window.AndroidKeyboard) AndroidKeyboard.sendKeyDownUp(66); // Системный Enter
+            } else if (button === "{space}") {
+                if (window.AndroidKeyboard) AndroidKeyboard.commitText(" ");
+            } else {
+                // Ввод стандартной буквы
+                if (window.AndroidKeyboard) AndroidKeyboard.commitText(button);
+                
+                // Если это был временный Shift, возвращаем маленькие буквы
+                if (currentLayout === "shift") {
+                    currentLayout = "default";
+                    myKeyboard.setOptions({ layoutName: currentLayout });
+                }
+            }
+        }
+
         function toggleOverlay(show) {
             document.getElementById('overlay').style.display = show ? 'flex' : 'none';
         }
