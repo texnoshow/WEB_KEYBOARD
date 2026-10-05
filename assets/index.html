@@ -74,6 +74,7 @@
             out.value = expr;
         }
 
+        // ИСПРАВЛЕНО: Лишнее слово полностью удалено из скрипта
         function insertResult() {
             const val = document.getElementById('calc-display').value;
             if (val && val !== "Ошибка" && window.AndroidKeyboard?.commitText) window.AndroidKeyboard.commitText(val);
