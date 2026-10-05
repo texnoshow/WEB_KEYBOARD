@@ -58,8 +58,7 @@ class MyKeyboardService : InputMethodService() {
             val row = LinearLayout(this).apply { layoutParams = LinearLayout.LayoutParams(-1, 0, 1f) }
             for (k in rowKeys) {
                 row.addView(Button(this).apply {
-                    // ИСПРАВЛЕНО: Безопасно проверяем первый символ строки k[0].isLetter() для смены регистра
-                    text = if (shift && k.length == 1 && k[0].isLetter()) k.uppercase() else k
+                    text = if (shift && k.length == 1 && k.first().isLetter()) k.uppercase() else k
                     layoutParams = LinearLayout.LayoutParams(0, -1, when(k){ "Пробел"->4f; "Enter","⇧","⌫"->1.5f; else->1f }).apply { setMargins(m, m, m, m) }
                     setBackgroundColor(if(k=="⇧"&&shift) 0xff444444.toInt() else if(listOf("⇧","⌫","Enter","🌐").contains(k)) 0xff1e1e1e.toInt() else 0xff2d2d2d.toInt())
                     setTextColor(-1); textSize = if (isTab) 20f else 16f; isAllCaps = false
