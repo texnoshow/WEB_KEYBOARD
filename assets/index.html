@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <style>
         html, body { margin: 0; padding: 0; background: #1e1e1e; color: #fff; font-family: sans-serif; height: 100vh; width: 100vw; user-select: none; overflow: hidden; touch-action: none; box-sizing: border-box; }
         .bar { display: flex; padding: 4px 10px; background: #1e1e1e; align-items: center; height: 45px; box-sizing: border-box; gap: 8px; }
@@ -18,7 +23,6 @@
 
     <div class="bar">
         <button class="btn" id="btn-widgets" onclick="openPanel(true)">⚡ Виджеты</button>
-        <!-- Новая кнопка переключения нативного режима цифр и символов -->
         <button class="btn" id="btn-symbols" onclick="pressSymbols()">🔢 Цифры</button>
         <span id="lang-indicator" style="font-size: 13px; color: #888; font-weight: bold; margin-left: auto; padding-right: 4px;">RU</span>
     </div>
@@ -29,7 +33,6 @@
             <button class="btn" style="background: #a33; margin-left: auto;" onclick="openPanel(false)">✕ Свернуть</button>
         </div>
 
-        <!-- Оставлен только стабильный оффлайн-виджет часов -->
         <div id="tab-clock" class="widget-body">
             <div id="clock" style="font-size: 8vh; font-weight: bold; color: #00ffcc; font-family: monospace;">00:00:00</div>
         </div>
@@ -39,36 +42,26 @@
         let isSymbolMode = false;
 
         function openPanel(show) {
-            // Если открываем виджеты, выключаем режим цифр на кнопках
             if (show && isSymbolMode) pressSymbols();
-            
             document.getElementById('widget-screen').style.display = show ? 'flex' : 'none';
             if (window.AndroidKeyboard?.toggleWidgetView) window.AndroidKeyboard.toggleWidgetView(show);
-        }
-
-        function switchTab(tabId) {
-            document.getElementById('tab-clock').style.display = 'flex';
         }
 
         function updateLangIndicator(lang) { 
             document.getElementById('lang-indicator').innerText = lang; 
         }
 
-        // Переключение режима цифр и символов в Kotlin
         function pressSymbols() {
             isSymbolMode = !isSymbolMode;
             const btn = document.getElementById('btn-symbols');
-            if (isSymbolMode) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            if (isSymbolMode) btn.classList.add('active');
+            else btn.classList.remove('active');
+            
             if (window.AndroidKeyboard?.toggleSymbolMode) {
                 window.AndroidKeyboard.toggleSymbolMode(isSymbolMode);
             }
         }
 
-        // Позволяет Kotlin-части принудительно гасить кнопку цифр (например, при нажатии на глобус)
         function updateSymbolButtonState(active) {
             isSymbolMode = active;
             const btn = document.getElementById('btn-symbols');
@@ -76,7 +69,6 @@
             else btn.classList.remove('active');
         }
         
-        // 🕒 ЧАСЫ
         setInterval(() => {
             const now = new Date();
             document.getElementById('clock').innerText = now.toTimeString().split(' ');
