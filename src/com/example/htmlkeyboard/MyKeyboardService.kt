@@ -16,10 +16,20 @@ class MyKeyboardService : InputMethodService() {
     private lateinit var layout: LinearLayout
     private var lang = "RU"
     private var shift = false
+    private var symbolMode = false // Флаг режима цифр и спецсимволов
 
+    // Основные раскладки
     private val layouts = mapOf(
         "RU" to listOf(listOf("й","ц","у","к","е","н","г","ш","щ","з","х","ъ"), listOf("ф","ы","в","а","п","р","о","л","д","ж","э"), listOf("⇧","я","ч","с","м","и","т","ь","б","ю","⌫"), listOf("🌐","Пробел","Enter")),
         "EN" to listOf(listOf("q","w","e","r","t","y","u","i","o","p"), listOf("a","s","d","f","g","h","j","k","l"), listOf("⇧","z","x","c","v","b","n","m","⌫"), listOf("🌐","Пробел","Enter"))
+    )
+
+    // Отдельная нативная панель цифр и спецсимволов
+    private val symbolLayout = listOf(
+        listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
+        listOf("-", "/", ":", ";", "(", ")", "₽", "&", "@", "\""),
+        listOf(".", ",", "?", "!", "'", "[", "]", "{", "}", "⌫"),
+        listOf("🌐", "Пробел", "Enter")
     )
 
     override fun onCreateInputView(): View {
@@ -54,7 +64,10 @@ class MyKeyboardService : InputMethodService() {
         val isTab = resources.configuration.screenWidthDp >= 600
         val m = if (isTab) 4 else 2
 
-        for (rowKeys in layouts[lang]!!) {
+        // Выбираем, какую сетку кнопок отрисовать
+        val currentRows = if (symbolMode) symbolLayout else layouts[lang]!!
+
+        for (rowKeys in currentRows) {
             val row = LinearLayout(this).apply { layoutParams = LinearLayout.LayoutParams(-1, 0, 1f) }
             for (k in rowKeys) {
                 row.addView(Button(this).apply {
@@ -76,8 +89,27 @@ class MyKeyboardService : InputMethodService() {
             "Enter" -> { ic.sendKeyEvent(android.view.KeyEvent(0, 66)); ic.sendKeyEvent(android.view.KeyEvent(1, 66)) }
             "Пробел" -> ic.commitText(" ", 1)
             "⇧" -> { shift = !shift; renderKeys() }
-            "🌐" -> { lang = if (lang == "RU") "EN" else "RU"; webView?.evaluateJavascript("updateLangIndicator('$lang');", null); renderKeys() }
+            "🌐" -> { 
+                // Если мы в символьном режиме, кнопка глобуса просто возвращает нас к буквам
+                if (symbolMode) {
+                    symbolMode = false
+                    webView?.evaluateJavascript("updateSymbolButtonState(false);", null)
+                } else {
+                    lang = if (lang == "RU") "EN" else "RU"
+                    webView?.evaluateJavascript("updateLangIndicator('$lang');", null)
+                }
+                renderKeys()
+            }
             else -> { ic.commitText(if(shift) k.uppercase() else k, 1); if(shift){ shift = false; renderKeys() } }
+        }
+    }
+
+    // Вызывается из JavaScript при клике на кнопку цифр/символов
+    @JavascriptInterface 
+    fun toggleSymbolMode(enable: Boolean) {
+        Handler(Looper.getMainLooper()).post {
+            symbolMode = enable
+            renderKeys()
         }
     }
 
