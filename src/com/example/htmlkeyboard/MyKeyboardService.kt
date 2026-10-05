@@ -16,8 +16,10 @@ class MyKeyboardService : InputMethodService() {
     private var webView: WebView? = null
 
     override fun onCreateInputView(): View {
+        // Используем контекст темы устройства
         val themedContext = ContextThemeWrapper(this, android.R.style.Theme_DeviceDefault)
 
+        // Контейнер фиксированной высоты (250dp)
         val container = FrameLayout(themedContext).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -31,13 +33,28 @@ class MyKeyboardService : InputMethodService() {
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
             
-            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+            // КРИТИЧЕСКИ ВАЖНО ДЛЯ КЛАВИАТУР:
+            // Отключаем фокус для WebView, чтобы фокус оставался в активном приложении (блокнот, мессенджер)
+            isFocusable = false
+            isFocusableInTouchMode = false
+            clearFocus()
 
+            // Настройки WebSettings
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
+            settings.allowFileAccess = true // Позволяет корректно читать файлы из assets
             
+            // Связываем JavaScript с Kotlin-интерфейсом
             addJavascriptInterface(WebAppInterface(this@MyKeyboardService), "AndroidKeyboard")
-            webViewClient = WebViewClient()
+            
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    // Дополнительная страховка фокуса после полной загрузки страницы
+                    view?.clearFocus()
+                }
+            }
+            
             loadUrl("file:///android_asset/index.html")
         }
 
@@ -45,7 +62,14 @@ class MyKeyboardService : InputMethodService() {
         return container
     }
 
-    // ИСПРАВЛЕНО: Используем стандартный onDestroy для безопасной очистки WebView
+    // Вызывается, когда пользователь переключает фокус на другое текстовое поле
+    override fun onStartInputView(info: android.view.inputmethod.EditorInfo?, restarting: Boolean) {
+        super.onStartInputView(info, restarting)
+        // Страхуемся, чтобы при открытии клавиатуры WebView гарантированно не забирал фокус
+        webView?.clearFocus()
+    }
+
+    // Безопасная очистка WebView при уничтожении службы клавиатуры
     override fun onDestroy() {
         webView?.let {
             (it.parent as? ViewGroup)?.removeView(it)
@@ -56,14 +80,18 @@ class MyKeyboardService : InputMethodService() {
         super.onDestroy()
     }
 
-    class WebAppInterface(private val service: InputMethodService) {
+    // Интерфейс для взаимодействия JavaScript -> Kotlin
+    class WebAppInterface(private val service: MyKeyboardService) {
         private val mainHandler = Handler(Looper.getMainLooper())
 
         @JavascriptInterface
         fun commitText(text: String) {
             mainHandler.post {
+                // Извлекаем актуальное соединение ввода в основном потоке
                 val inputConnection = service.currentInputConnection
-                inputConnection?.commitText(text, 1)
+                if (inputConnection != null) {
+                    inputConnection.commitText(text, 1)
+                }
             }
         }
     }
