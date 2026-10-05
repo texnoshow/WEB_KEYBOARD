@@ -121,17 +121,18 @@ jobs:
         KEY_B64=$(base64 -w 0 auto-release.jks)
         echo "signing_key_b64=$KEY_B64" >> $GITHUB_OUTPUT
 
-    # Официальный экшен подписи с принудительным указанием инструментов версии 34.0.0
+    # ИСПРАВЛЕНО: Переменная BUILD_TOOLS_VERSION теперь передается строго в блок env
     - name: Sign APK
       uses: r0adkll/sign-android-release@v1
       id: sign_app
+      env:
+        BUILD_TOOLS_VERSION: "34.0.0"
       with:
         releaseDirectory: app/build/outputs/apk/release
         signingKeyBase64: ${{ steps.create_key.outputs.signing_key_b64 }}
         alias: key_alias
         keyStorePassword: my_password
         keyPassword: my_password
-        buildToolsVersion: "34.0.0"
 
     # Выгружаем полностью готовую, подписанную и корректно работающую клавиатуру
     - name: Upload Signed APK Artifact
