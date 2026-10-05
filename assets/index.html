@@ -57,7 +57,6 @@
             if (window.AndroidKeyboard?.toggleWidgetView) window.AndroidKeyboard.toggleWidgetView(show);
         }
 
-         Tar1
         function switchTab(tabId) {
             document.getElementById('tab-clock').style.display = 'none';
             document.getElementById('tab-color').style.display = 'none';
@@ -78,12 +77,12 @@
             document.getElementById('btn-symbols').classList.toggle('active', isSymbolMode);
         }
         
+        // СТАНДАРТНЫЙ СИСТЕМНЫЙ ФОРМАТ ВРЕМЕНИ
         setInterval(() => {
             const now = new Date();
-            document.getElementById('clock').innerText = now.toTimeString().split(' ');
+            document.getElementById('clock').innerText = now.toLocaleTimeString();
         }, 1000);
 
-        // ИГРА БЕЗ ВЫВОДА В ТЕКСТОВЫЕ ПОЛЯ ANDROID
         let colorScore = 0;
         let rightColor = "";
         const colorNames = { "#ff4444":"КРАСНЫЙ", "#44ff44":"ЗЕЛЕНЫЙ", "#33b5e5":"СИНИЙ", "#ffbb33":"ЖЕЛТЫЙ", "#aa66cc":"ФИОЛЕТОВЫЙ" };
@@ -108,7 +107,6 @@
                 b.className = 'color-btn';
                 b.style.backgroundColor = c;
                 b.onclick = () => {
-                    // Просто инкрементируем или сбрасываем локальный счет, чат не трогаем
                     if (c === rightColor) {
                         colorScore++;
                     } else {
