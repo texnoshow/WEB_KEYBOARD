@@ -11,14 +11,14 @@
         .btn { background: #2d2d2d; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
         .btn:active { background: #444; }
         .btn.active { background: #444444; border-color: #00ffcc; color: #00ffcc; }
-        #widget-screen { display: none; flex-direction: column; padding: 8px; background: #121212; height: calc(100vh - 45px); box-sizing: border-box; overflow: hidden; }
-        .menu-row { display: flex; gap: 6px; margin-bottom: 6px; height: 32px; }
-        .widget-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
         
-        .color-box { width: 65px; height: 65px; border-radius: 12px; margin-bottom: 6px; border: 2px solid #fff; transition: transform 0.1s; }
-        .color-box:active { transform: scale(0.9); }
-        .color-options { display: flex; gap: 6px; }
-        .color-btn { width: 45px; height: 35px; border: none; border-radius: 6px; cursor: pointer; }
+        #widget-screen { display: none; flex-direction: column; padding: 4px; background: #121212; height: calc(100vh - 45px); box-sizing: border-box; overflow: hidden; }
+        .menu-row { display: flex; gap: 4px; margin-bottom: 4px; height: 32px; align-items: center; }
+        .widget-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; width: 100%; height: calc(100% - 36px); }
+        
+        /* Стили элементов встроенного браузера */
+        .browser-search { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 12px; height: 26px; box-sizing: border-box; }
+        .browser-frame { width: 100%; flex: 1; border: 1px solid #333; border-radius: 6px; background: #fff; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -32,19 +32,25 @@
     <div id="widget-screen">
         <div class="menu-row">
             <button class="btn" onclick="switchTab('tab-clock')">🕒 Время</button>
-            <button class="btn" onclick="switchTab('tab-color')">🎮 Игра</button>
+            <button class="btn" onclick="switchTab('tab-browser')">🌐 Браузер</button>
             <button class="btn" style="background: #a33; margin-left: auto;" onclick="openPanel(false)">✕</button>
         </div>
 
+        <!-- ТАБ 1: ЧАСЫ -->
         <div id="tab-clock" class="widget-body">
             <div id="clock" style="font-size: 8vh; font-weight: bold; color: #00ffcc; font-family: monospace;">00:00:00</div>
         </div>
 
-        <div id="tab-color" class="widget-body" style="display: none;">
-            <div id="hint-text" style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">Жми на квадрат!</div>
-            <div id="target-color" class="color-box"></div>
-            <div class="color-options" id="color-buttons"></div>
-            <div id="color-score" style="margin-top: 8px; font-size: 13px; color: #00ffcc; font-weight: bold;">Комбо: 0</div>
+        <!-- ТАБ 2: МИНИ-БРАУЗЕР -->
+        <div id="tab-browser" class="widget-body" style="display: none;">
+            <!-- Панель управления браузером -->
+            <div class="menu-row" style="width: 100%; margin-bottom: 4px; padding: 0 2px;">
+                <input type="text" id="search-input" class="browser-search" placeholder="Введите URL или запрос..." value="https://userguide.ru">
+                <button class="btn" style="padding: 4px 8px;" onclick="browseGo()">Перейти</button>
+                <button class="btn" style="padding: 4px 8px; background: #333;" onclick="browseRefresh()">🔄</button>
+            </div>
+            <!-- Окно отображения сайтов -->
+            <iframe id="browser-viewport" class="browser-frame" src="about:blank"></iframe>
         </div>
     </div>
 
@@ -59,9 +65,16 @@
 
         function switchTab(tabId) {
             document.getElementById('tab-clock').style.display = 'none';
-            document.getElementById('tab-color').style.display = 'none';
+            document.getElementById('tab-browser').style.display = 'none';
             document.getElementById(tabId).style.display = 'flex';
-            if (tabId === 'tab-color') initColorGame();
+            
+            // Если открываем браузер первый раз, загружаем стартовую страницу
+            if (tabId === 'tab-browser') {
+                const frame = document.getElementById('browser-viewport');
+                if (frame.src === "about:blank" || frame.src === "") {
+                    browseGo();
+                }
+            }
         }
 
         function updateLangIndicator(lang) { document.getElementById('lang-indicator').innerText = lang; }
@@ -77,46 +90,34 @@
             document.getElementById('btn-symbols').classList.toggle('active', isSymbolMode);
         }
         
-        // СТАНДАРТНЫЙ СИСТЕМНЫЙ ФОРМАТ ВРЕМЕНИ
+        // 🕒 ЧАСЫ
         setInterval(() => {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString();
         }, 1000);
 
-        let colorScore = 0;
-        let rightColor = "";
-        const colorNames = { "#ff4444":"КРАСНЫЙ", "#44ff44":"ЗЕЛЕНЫЙ", "#33b5e5":"СИНИЙ", "#ffbb33":"ЖЕЛТЫЙ", "#aa66cc":"ФИОЛЕТОВЫЙ" };
-
-        function initColorGame() {
-            const box = document.getElementById('target-color');
-            const container = document.getElementById('color-buttons');
-            const hint = document.getElementById('hint-text');
-            container.innerHTML = "";
+        // 🌐 ЛОГИКА МИНИ-БРАУЗЕРА
+        function browseGo() {
+            const input = document.getElementById('search-input').value.trim();
+            const frame = document.getElementById('browser-viewport');
             
-            const colors = Object.keys(colorNames);
-            rightColor = colors[Math.floor(Math.random() * colors.length)];
-            box.style.backgroundColor = rightColor;
+            if (input === "") return;
             
-            const fakeTextKey = colors[Math.floor(Math.random() * colors.length)];
-            const fakeColorKey = colors[Math.floor(Math.random() * colors.length)];
-            hint.innerText = colorNames[fakeTextKey];
-            hint.style.color = fakeColorKey;
+            // Если ввели не ссылку, а поисковый запрос, перенаправляем в Яндекс
+            if (!input.startsWith('http://') && !input.startsWith('https://') && input.includes('.')) {
+                frame.src = 'https://' + input;
+            } else if (input.startsWith('http://') || input.startsWith('https://')) {
+                frame.src = input;
+            } else {
+                // Превращаем текст в поисковый запрос (например, через поиск Яндекса)
+                frame.src = 'https://yandex.ru' + encodeURIComponent(input);
+            }
+        }
 
-            colors.forEach(c => {
-                const b = document.createElement('button');
-                b.className = 'color-btn';
-                b.style.backgroundColor = c;
-                b.onclick = () => {
-                    if (c === rightColor) {
-                        colorScore++;
-                    } else {
-                        colorScore = 0;
-                    }
-                    document.getElementById('color-score').innerText = "Комбо: " + colorScore;
-                    initColorGame();
-                };
-                container.appendChild(b);
-            });
+        function browseRefresh() {
+            const frame = document.getElementById('browser-viewport');
+            // Перезагружаем текущую страницу в iframe
+            frame.src = frame.src;
         }
     </script>
 </body>
