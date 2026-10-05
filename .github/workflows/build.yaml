@@ -20,6 +20,7 @@ jobs:
 
     - name: Create Project Files & Gradle Wrapper
       run: |
+        # 1. Создаем settings.gradle
         cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
@@ -39,16 +40,20 @@ jobs:
         include ':app'
         EOF
 
+        # 2. Создаем корневой build.gradle с поддержкой Kotlin
         cat << 'EOF' > build.gradle
         plugins {
             id 'com.android.application' version '8.2.0' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
         }
         EOF
 
+        # 3. Создаем папку модуля app и настраиваем ее build.gradle
         mkdir -p app
         cat << 'EOF' > app/build.gradle
         plugins {
             id 'com.android.application'
+            id 'org.jetbrains.kotlin.android'
         }
         android {
             namespace 'com.example.htmlkeyboard'
@@ -60,21 +65,23 @@ jobs:
                 versionCode 1
                 versionName "1.0"
             }
+            
+            // Настройка путей: говорим Gradle брать файлы из корня репозитория (уровень выше папки app)
+            sourceSets {
+                main {
+                    manifest.srcFile '../AndroidManifest.xml'
+                    java.srcDirs = ['../src']
+                    res.srcDirs = ['../res']
+                    assets.srcDirs = ['../assets']
+                }
+            }
         }
         dependencies {
+            implementation 'androidx.core:core-ktx:1.12.0'
         }
         EOF
-
-        mkdir -p app/src/main/java/com/example/htmlkeyboard
-        mkdir -p app/src/main/res/xml
-        mkdir -p app/src/main/assets
         
-        [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
-        [ -f res/xml/method.xml ] && mv res/xml/method.xml app/src/main/res/xml/
-        [ -f assets/index.html ] && mv assets/index.html app/src/main/assets/
-        [ -f src/com/example/htmlkeyboard/MyKeyboardService.kt ] && mv src/com/example/htmlkeyboard/MyKeyboardService.kt app/src/main/java/com/example/htmlkeyboard/
-        
-        # Принудительно задаем стабильную версию Gradle 8.5 вместо девятой
+        # Генерируем Gradle Wrapper версии 8.5
         gradle wrapper --gradle-version 8.5
     
     - name: Build Debug APK
