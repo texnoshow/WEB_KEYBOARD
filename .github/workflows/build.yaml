@@ -73,7 +73,6 @@ jobs:
                 versionName "1.0"
             }
             
-            // На всякий случай оставляем мягкий lint, но теперь код тоже будет чистым
             lint {
                 abortOnError false
                 checkReleaseBuilds false
@@ -110,7 +109,7 @@ jobs:
       run: |
         sed -i 's|http://android.com|http://android.com|g' res/xml/method.xml
 
-    # Теперь собираем релизный APK с гарантированно исправленным XML-файлом
+    # Собираем чистый релизный APK с исправленным XML-файлом
     - name: Build Release APK
       run: ./gradlew clean assembleRelease
 
@@ -122,7 +121,7 @@ jobs:
         KEY_B64=$(base64 -w 0 auto-release.jks)
         echo "signing_key_b64=$KEY_B64" >> $GITHUB_OUTPUT
 
-    # Официальный экшен для надежной подписи получившегося APK
+    # Официальный экшен подписи с принудительным указанием инструментов версии 34.0.0
     - name: Sign APK
       uses: r0adkll/sign-android-release@v1
       id: sign_app
@@ -132,8 +131,9 @@ jobs:
         alias: key_alias
         keyStorePassword: my_password
         keyPassword: my_password
+        buildToolsVersion: "34.0.0"
 
-    # Выгружаем полностью готовую, подписанную и КОРРЕКТНО РАБОТАЮЩУЮ клавиатуру
+    # Выгружаем полностью готовую, подписанную и корректно работающую клавиатуру
     - name: Upload Signed APK Artifact
       uses: actions/upload-artifact@v4
       with:
