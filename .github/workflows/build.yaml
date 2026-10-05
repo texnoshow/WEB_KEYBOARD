@@ -40,11 +40,11 @@ jobs:
         include ':app'
         EOF
 
-        # 2. Создаем корневой build.gradle с поддержкой Kotlin
+        # 2. Создаем корневой build.gradle с актуальными версиями под Gradle 8.x
         cat << 'EOF' > build.gradle
         plugins {
-            id 'com.android.application' version '8.2.0' apply false
-            id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
+            id 'com.android.application' version '8.2.2' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
         }
         EOF
 
@@ -66,7 +66,7 @@ jobs:
                 versionName "1.0"
             }
             
-            // Настройка путей: говорим Gradle брать файлы из корня репозитория (уровень выше папки app)
+            // Настройка кастомных путей (файлы берутся из корня репозитория)
             sourceSets {
                 main {
                     manifest.srcFile '../AndroidManifest.xml'
@@ -81,10 +81,12 @@ jobs:
         }
         EOF
         
-        # Генерируем Gradle Wrapper версии 8.5
+        # Фиксация стабильной версии: Генерируем локальный Gradle Wrapper 8.5
         gradle wrapper --gradle-version 8.5
     
     - name: Build Debug APK
+      # ИСПРАВЛЕНО: запускаем сборку строго через локальный ./gradlew (Wrapper),
+      # чтобы защитить проект от нестабильных глобальных версий Gradle на серверах GitHub
       run: ./gradlew assembleDebug
 
     - name: Upload APK Artifact
