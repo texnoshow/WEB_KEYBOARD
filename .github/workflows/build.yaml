@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   push:
     paths-ignore:
-      - '.github/workflows/**'  # Защита: сохранение этого файла не запустит сборку заново
+      - '.github/workflows/**'  # Сохранение этого файла не запустит сборку заново
   workflow_dispatch:            # Позволяет запустить сборку вручную кнопкой в Actions
 
 jobs:
@@ -22,6 +22,7 @@ jobs:
 
     - name: Create Project Files & Gradle Wrapper
       run: |
+        # 1. Создаем settings.gradle
         cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
@@ -41,6 +42,7 @@ jobs:
         include ':app'
         EOF
 
+        # 2. Создаем корневой build.gradle с актуальными версиями
         cat << 'EOF' > build.gradle
         plugins {
             id 'com.android.application' version '8.2.2' apply false
@@ -48,6 +50,12 @@ jobs:
         }
         EOF
 
+        # 3. Создаем файл gradle.properties и включаем поддержку AndroidX
+        cat << 'EOF' > gradle.properties
+        android.useAndroidX=true
+        EOF
+
+        # 4. Создаем папку модуля app и настраиваем ее build.gradle
         mkdir -p app
         cat << 'EOF' > app/build.gradle
         plugins {
@@ -79,6 +87,7 @@ jobs:
         }
         EOF
         
+        # Генерируем локальный Gradle Wrapper 8.5
         gradle wrapper --gradle-version 8.5
     
     - name: Build Debug APK
