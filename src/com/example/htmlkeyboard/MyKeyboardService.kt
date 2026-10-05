@@ -45,15 +45,15 @@ class MyKeyboardService : InputMethodService() {
         return container
     }
 
-    // ИСПРАВЛЕНО: Используем правильное имя системного метода для очистки ресурсов клавиатуры
-    override fun onDestroyViews() {
+    // ИСПРАВЛЕНО: Используем стандартный onDestroy для безопасной очистки WebView
+    override fun onDestroy() {
         webView?.let {
             (it.parent as? ViewGroup)?.removeView(it)
             it.removeAllViews()
             it.destroy()
         }
         webView = null
-        super.onDestroyViews()
+        super.onDestroy()
     }
 
     class WebAppInterface(private val service: InputMethodService) {
