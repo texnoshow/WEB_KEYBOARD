@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   push:
     paths-ignore:
-      - '.github/workflows/**'  # Сохранение этого файла не запустит сборку заново
+      - '.github/workflows/**'  # Защита: сохранение этого файла не запустит сборку заново
   workflow_dispatch:            # Позволяет запустить сборку вручную кнопкой в Actions
 
 jobs:
@@ -42,7 +42,7 @@ jobs:
         include ':app'
         EOF
 
-        # 2. Создаем корневой build.gradle с актуальными версиями
+        # 2. Создаем корневой build.gradle
         cat << 'EOF' > build.gradle
         plugins {
             id 'com.android.application' version '8.2.2' apply false
@@ -71,6 +71,15 @@ jobs:
                 targetSdk 34
                 versionCode 1
                 versionName "1.0"
+            }
+            
+            // ИСПРАВЛЕНО: Явно выравниваем версии Java до 1.8 для обоих компиляторов
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_1_8
+                targetCompatibility = JavaVersion.VERSION_1_8
+            }
+            kotlinOptions {
+                jvmTarget = "1.8"
             }
             
             sourceSets {
