@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.View
+import android.webkit.JavascriptInterface
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.Button
@@ -49,14 +50,10 @@ class MyKeyboardService : InputMethodService() {
             layoutParams = FrameLayout.LayoutParams(-1, (45 * density).toInt(), Gravity.TOP)
             isFocusable = false; clearFocus()
             
-            // ЖЕСТКИЙ СБРОС КЭША ДЛЯ БОРЬБЫ СО СТАРЫМ ИНТЕРФЕЙСОМ
             clearCache(true)
-            
             settings.javaScriptEnabled = true
             settings.allowFileAccess = true
             settings.domStorageEnabled = true
-            
-            // Отключаем кэширование на уровне настроек WebView
             settings.cacheMode = WebSettings.LOAD_NO_CACHE
             
             addJavascriptInterface(this@MyKeyboardService, "AndroidKeyboard")
