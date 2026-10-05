@@ -5,121 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
-            margin: 0; background: #121212; color: #fff;
-            font-family: sans-serif; display: flex; flex-direction: column; height: 250px;
-            user-select: none; box-sizing: border-box; overflow: hidden;
+            margin: 0; background: #1e1e1e; color: #fff;
+            font-family: sans-serif; display: flex; flex-direction: column;
+            height: 100vh; user-select: none; box-sizing: border-box; overflow: hidden;
         }
-        /* Верхняя панель */
-        .keyboard-bar {
-            display: flex; justify-content: space-between; padding: 6px 10px; 
-            background: #1e1e1e; border-top: 1px solid #333; align-items: center; height: 35px;
-        }
-        /* Сетка для букв */
-        .keyboard-grid {
-            flex: 1; display: flex; flex-direction: column; padding: 4px; gap: 4px;
-        }
-        .row {
-            display: flex; gap: 4px; flex: 1; justify-content: center;
+        /* Компактная полоска виджетов */
+        .bar {
+            display: flex; justify-content: space-between; padding: 4px 8px; 
+            background: #1e1e1e; align-items: center; height: 40px; box-sizing: border-box;
         }
         button {
-            flex: 1; background: #2d2d2d; color: #fff; border: none;
-            border-bottom: 2px solid #1a1a1a; border-radius: 4px;
-            font-size: 16px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
+            background: #2d2d2d; color: #fff; border: 1px solid #444; 
+            padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;
         }
         button:active { background: #444; }
-        
-        .sys { background: #1e1e1e; font-size: 14px; }
-        .space { flex: 4; background: #333; }
 
-        /* Оверлей виджетов */
-        #overlay {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(18, 18, 18, 0.95); flex-direction: column; padding: 12px; box-sizing: border-box;
-            z-index: 100;
+        /* Полноэкранный оверлей виджетов, когда служба разворачивает WebView */
+        #widget-screen {
+            display: none; flex: 1; flex-direction: column; padding: 10px; background: #121212;
         }
     </style>
 </head>
 <body>
 
-    <!-- Верхняя панель -->
-    <div class="keyboard-bar">
-        <button style="padding: 4px 10px; flex: none;" onclick="toggleOverlay(true)">⚡ Панель</button>
-        <span style="font-size: 12px; color: #888;">ПРОСТАЯ РАКЛАДКА</span>
-    </div>
-    
-    <!-- Сетка кнопок (Вписана вручную, без JS-генерации) -->
-    <div class="keyboard-grid">
-        <!-- Ряд 1 -->
-        <div class="row">
-            <button onclick="press('й')">й</button><button onclick="press('ц')">ц</button>
-            <button onclick="press('у')">у</button><button onclick="press('к')">к</button>
-            <button onclick="press('е')">е</button><button onclick="press('н')">н</button>
-            <button onclick="press('г')">г</button><button onclick="press('ш')">ш</button>
-            <button onclick="press('щ')">щ</button><button onclick="press('з')">з</button>
-            <button onclick="press('х')">х</button><button onclick="press('ъ')">ъ</button>
-        </div>
-        <!-- Ряд 2 -->
-        <div class="row">
-            <button onclick="press('ф')">ф</button><button onclick="press('ы')">ы</button>
-            <button onclick="press('в')">в</button><button onclick="press('а')">а</button>
-            <button onclick="press('п')">п</button><button onclick="press('р')">р</button>
-            <button onclick="press('о')">о</button><button onclick="press('л')">л</button>
-            <button onclick="press('д')">д</button><button onclick="press('ж')">ж</button>
-            <button onclick="press('э')">э</button>
-        </div>
-        <!-- Ряд 3 -->
-        <div class="row">
-            <button onclick="press('я')">я</button><button onclick="press('ч')">ч</button>
-            <button onclick="press('с')">с</button><button onclick="press('м')">м</button>
-            <button onclick="press('и')">и</button><button onclick="press('т')">т</button>
-            <button onclick="press('ь')">ь</button><button onclick="press('б')">б</button>
-            <button onclick="press('ю')">ю</button>
-            <button class="sys" onclick="backspace()">⌫</button>
-        </div>
-        <!-- Ряд 4 -->
-        <div class="row">
-            <button class="sys space" onclick="press(' ')">Пробел</button>
-            <button class="sys" style="flex: 1.5;" onclick="enter()">Enter</button>
-        </div>
+    <!-- Эта полоска видна всегда НАД системными клавишами -->
+    <div class="bar">
+        <button onclick="openPanel(true)">⚡ Виджеты / Панель</button>
+        <span style="font-size: 11px; color: #666;">СИСТЕМНЫЙ ВВОД</span>
     </div>
 
-    <!-- Панель виджетов -->
-    <div id="overlay">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 8px;">
+    <!-- Экран виджетов (Появляется при разворачивании) -->
+    <div id="widget-screen">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 6px;">
             <span style="font-size: 13px; font-weight: bold; color: #aaa;">Панель виджетов</span>
-            <button style="padding: 4px 10px; flex: none; background: #a33;" onclick="toggleOverlay(false)">✕</button>
+            <button style="background: #a33;" onclick="openPanel(false)">✕ Закрыть</button>
         </div>
         <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
-            <button style="padding: 10px 20px; flex: none;" onclick="press('Привет из скрипта!')">Вставить тестовый текст</button>
+            <button onclick="sendText('Текст из веб-виджета!')">Вставить тестовый текст</button>
         </div>
     </div>
 
     <script>
-        // Функция ввода текста
-        function press(text) {
+        function openPanel(show) {
+            document.getElementById('widget-screen').style.display = show ? 'flex' : 'none';
+            // Даем команду Kotlin-службе изменить размер WebView
+            if (window.AndroidKeyboard && window.AndroidKeyboard.toggleWidgetView) {
+                window.AndroidKeyboard.toggleWidgetView(show);
+            }
+        }
+
+        function sendText(text) {
             if (window.AndroidKeyboard && window.AndroidKeyboard.commitText) {
                 window.AndroidKeyboard.commitText(text);
             }
-        }
-
-        // Функция стирания
-        function backspace() {
-            if (window.AndroidKeyboard && window.AndroidKeyboard.sendBackspace) {
-                window.AndroidKeyboard.sendBackspace();
-            }
-        }
-
-        // Функция нажатия Enter
-        function enter() {
-            if (window.AndroidKeyboard && window.AndroidKeyboard.sendKeyDownUp) {
-                window.AndroidKeyboard.sendKeyDownUp(66);
-            }
-        }
-
-        // Открытие/закрытие оверлея
-        function toggleOverlay(show) {
-            document.getElementById('overlay').style.display = show ? 'flex' : 'none';
         }
     </script>
 </body>
