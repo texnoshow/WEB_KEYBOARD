@@ -4,60 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {
-            margin: 0; background: #1e1e1e; color: #fff;
-            font-family: sans-serif; display: flex; flex-direction: column;
-            height: 100vh; user-select: none; box-sizing: border-box; overflow: hidden;
-        }
-        /* Компактная полоска виджетов */
-        .bar {
-            display: flex; justify-content: space-between; padding: 4px 8px; 
-            background: #1e1e1e; align-items: center; height: 40px; box-sizing: border-box;
-        }
-        button {
-            background: #2d2d2d; color: #fff; border: 1px solid #444; 
-            padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;
-        }
-        button:active { background: #444; }
-
-        /* Полноэкранный оверлей виджетов, когда служба разворачивает WebView */
-        #widget-screen {
-            display: none; flex: 1; flex-direction: column; padding: 10px; background: #121212;
-        }
+        body { margin: 0; background: #1e1e1e; color: #fff; font-family: sans-serif; height: 100vh; user-select: none; overflow: hidden; box-sizing: border-box; }
+        .bar { display: flex; justify-content: space-between; padding: 4px 10px; background: #1e1e1e; align-items: center; height: 45px; box-sizing: border-box; }
+        .btn { background: #2d2d2d; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .btn:active { background: #444; }
+        #widget-screen { display: none; flex: 1; flex-direction: column; padding: 12px; background: #121212; height: calc(100vh - 45px); box-sizing: border-box; }
+        .menu-row { display: flex; gap: 6px; margin-bottom: 10px; }
+        .widget-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 100%; max-width: 240px; }
     </style>
 </head>
 <body>
 
-    <!-- Эта полоска видна всегда НАД системными клавишами -->
     <div class="bar">
-        <button onclick="openPanel(true)">⚡ Виджеты / Панель</button>
-        <span style="font-size: 11px; color: #666;">СИСТЕМНЫЙ ВВОД</span>
+        <button class="btn" onclick="openPanel(true)">⚡ Виджеты / Панель</button>
+        <span id="lang-indicator" style="font-size: 13px; color: #888; font-weight: bold;">RU</span>
     </div>
 
-    <!-- Экран виджетов (Появляется при разворачивании) -->
     <div id="widget-screen">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 6px;">
-            <span style="font-size: 13px; font-weight: bold; color: #aaa;">Панель виджетов</span>
-            <button style="background: #a33;" onclick="openPanel(false)">✕ Закрыть</button>
+        <div class="menu-row">
+            <button class="btn" onclick="switchTab('tab-clock')">🕒 Часы</button>
+            <button class="btn" onclick="switchTab('tab-calc')">🧮 Калькулятор</button>
+            <button class="btn" style="background: #a33; margin-left: auto;" onclick="openPanel(false)">✕ Свернуть</button>
         </div>
-        <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
-            <button onclick="sendText('Текст из веб-виджета!')">Вставить тестовый текст</button>
+
+        <div id="tab-clock" class="widget-body">
+            <div id="clock" style="font-size: 36px; font-weight: bold; color: #00ffcc; font-family: monospace;">00:00:00</div>
+        </div>
+
+        <div id="tab-calc" class="widget-body" style="display: none;">
+            <input type="text" id="calc-display" readonly style="width: 100%; max-width: 240px; background: #000; color: #0f0; border: 1px solid #444; padding: 6px; text-align: right; margin-bottom: 6px; font-family: monospace; font-size: 16px; border-radius: 4px;">
+            <div class="calc-grid">
+                <button class="btn" onclick="press('C')">C</button><button class="btn" onclick="press('/')">/</button><button class="btn" onclick="press('*')">*</button><button class="btn" onclick="press('-')">-</button>
+                <button class="btn" onclick="press('7')">7</button><button class="btn" onclick="press('8')">8</button><button class="btn" onclick="press('9')">9</button><button class="btn" onclick="press('+')">+</button>
+                <button class="btn" onclick="press('4')">4</button><button class="btn" onclick="press('5')">5</button><button class="btn" onclick="press('6')">6</button>
+                <button class="btn" style="grid-row: span 2; background: #28a745;" onclick="insertResult()">📥</button>
+                <button class="btn" onclick="press('1')">1</button><button class="btn" onclick="press('2')">2</button><button class="btn" onclick="press('3')">3</button>
+                <button class="btn" style="grid-column: span 2;" onclick="press('0')">0</button><button class="btn" onclick="press('=')">=</button>
+            </div>
         </div>
     </div>
 
     <script>
+        let expr = "";
         function openPanel(show) {
             document.getElementById('widget-screen').style.display = show ? 'flex' : 'none';
-            // Даем команду Kotlin-службе изменить размер WebView
-            if (window.AndroidKeyboard && window.AndroidKeyboard.toggleWidgetView) {
-                window.AndroidKeyboard.toggleWidgetView(show);
-            }
+            if (window.AndroidKeyboard?.toggleWidgetView) window.AndroidKeyboard.toggleWidgetView(show);
         }
+        function switchTab(tabId) {
+            document.getElementById('tab-clock').style.display = 'none';
+            document.getElementById('tab-calc').style.display = 'none';
+            document.getElementById(tabId).style.display = 'flex';
+        }
+        function updateLangIndicator(lang) { document.getElementById('lang-indicator').innerText = lang; }
+        
+        // 🕒 ЧАСЫ
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
+        }, 1000);
 
-        function sendText(text) {
-            if (window.AndroidKeyboard && window.AndroidKeyboard.commitText) {
-                window.AndroidKeyboard.commitText(text);
-            }
+        // 🧮 КАЛЬКУЛЯТОР
+        function press(val) {
+            const out = document.getElementById('calc-display');
+            if (val === 'C') expr = "";
+            else if (val === '=') {
+                try { expr = eval(expr.replace(/[^0-9+\-*/.]/g, '')).toString(); } catch(e) { expr = "Ошибка"; }
+            } else { if (expr === "Ошибка") expr = ""; expr += val; }
+            out.value = expr;
+        }
+         Miz
+        function insertResult() {
+            const val = document.getElementById('calc-display').value;
+            if (val && val !== "Ошибка" && window.AndroidKeyboard?.commitText) window.AndroidKeyboard.commitText(val);
         }
     </script>
 </body>
