@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <input-method xmlns:android="http://android.com">
     <subtype
-        android:icon="@mipmap/ic_launcher"
         android:label="HTML Keyboard"
         android:imeSubtypeLocale="en_US"
         android:imeSubtypeMode="keyboard" />
