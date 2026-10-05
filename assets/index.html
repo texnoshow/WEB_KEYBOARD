@@ -3,20 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    
+    <meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
     <style>
         html, body { margin: 0; padding: 0; background: #1e1e1e; color: #fff; font-family: sans-serif; height: 100vh; width: 100vw; user-select: none; overflow: hidden; touch-action: none; box-sizing: border-box; }
         .bar { display: flex; padding: 4px 10px; background: #1e1e1e; align-items: center; height: 45px; box-sizing: border-box; gap: 8px; }
         .btn { background: #2d2d2d; color: #fff; border: 1px solid #444; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
         .btn:active { background: #444; }
         .btn.active { background: #444444; border-color: #00ffcc; color: #00ffcc; }
-        #widget-screen { display: none; flex-direction: column; padding: 12px; background: #121212; height: calc(100vh - 45px); box-sizing: border-box; overflow: hidden; }
-        .menu-row { display: flex; gap: 6px; margin-bottom: 10px; }
+        #widget-screen { display: none; flex-direction: column; padding: 8px; background: #121212; height: calc(100vh - 45px); box-sizing: border-box; overflow: hidden; }
+        .menu-row { display: flex; gap: 6px; margin-bottom: 6px; height: 32px; }
         .widget-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        
+        .color-box { width: 65px; height: 65px; border-radius: 12px; margin-bottom: 6px; border: 2px solid #fff; transition: transform 0.1s; }
+        .color-box:active { transform: scale(0.9); }
+        .color-options { display: flex; gap: 6px; }
+        .color-btn { width: 45px; height: 35px; border: none; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -29,12 +31,20 @@
 
     <div id="widget-screen">
         <div class="menu-row">
-            <button class="btn" onclick="switchTab('tab-clock')">🕒 Часы</button>
-            <button class="btn" style="background: #a33; margin-left: auto;" onclick="openPanel(false)">✕ Свернуть</button>
+            <button class="btn" onclick="switchTab('tab-clock')">🕒 Время</button>
+            <button class="btn" onclick="switchTab('tab-color')">🎮 Игра</button>
+            <button class="btn" style="background: #a33; margin-left: auto;" onclick="openPanel(false)">✕</button>
         </div>
 
         <div id="tab-clock" class="widget-body">
             <div id="clock" style="font-size: 8vh; font-weight: bold; color: #00ffcc; font-family: monospace;">00:00:00</div>
+        </div>
+
+        <div id="tab-color" class="widget-body" style="display: none;">
+            <div id="hint-text" style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">Жми на квадрат!</div>
+            <div id="target-color" class="color-box"></div>
+            <div class="color-options" id="color-buttons"></div>
+            <div id="color-score" style="margin-top: 8px; font-size: 13px; color: #00ffcc; font-weight: bold;">Комбо: 0</div>
         </div>
     </div>
 
@@ -47,32 +57,69 @@
             if (window.AndroidKeyboard?.toggleWidgetView) window.AndroidKeyboard.toggleWidgetView(show);
         }
 
-        function updateLangIndicator(lang) { 
-            document.getElementById('lang-indicator').innerText = lang; 
+         Tar1
+        function switchTab(tabId) {
+            document.getElementById('tab-clock').style.display = 'none';
+            document.getElementById('tab-color').style.display = 'none';
+            document.getElementById(tabId).style.display = 'flex';
+            if (tabId === 'tab-color') initColorGame();
         }
+
+        function updateLangIndicator(lang) { document.getElementById('lang-indicator').innerText = lang; }
 
         function pressSymbols() {
             isSymbolMode = !isSymbolMode;
-            const btn = document.getElementById('btn-symbols');
-            if (isSymbolMode) btn.classList.add('active');
-            else btn.classList.remove('active');
-            
-            if (window.AndroidKeyboard?.toggleSymbolMode) {
-                window.AndroidKeyboard.toggleSymbolMode(isSymbolMode);
-            }
+            document.getElementById('btn-symbols').classList.toggle('active', isSymbolMode);
+            if (window.AndroidKeyboard?.toggleSymbolMode) window.AndroidKeyboard.toggleSymbolMode(isSymbolMode);
         }
 
         function updateSymbolButtonState(active) {
             isSymbolMode = active;
-            const btn = document.getElementById('btn-symbols');
-            if (isSymbolMode) btn.classList.add('active');
-            else btn.classList.remove('active');
+            document.getElementById('btn-symbols').classList.toggle('active', isSymbolMode);
         }
         
         setInterval(() => {
             const now = new Date();
             document.getElementById('clock').innerText = now.toTimeString().split(' ');
         }, 1000);
+
+        // ИГРА БЕЗ ВЫВОДА В ТЕКСТОВЫЕ ПОЛЯ ANDROID
+        let colorScore = 0;
+        let rightColor = "";
+        const colorNames = { "#ff4444":"КРАСНЫЙ", "#44ff44":"ЗЕЛЕНЫЙ", "#33b5e5":"СИНИЙ", "#ffbb33":"ЖЕЛТЫЙ", "#aa66cc":"ФИОЛЕТОВЫЙ" };
+
+        function initColorGame() {
+            const box = document.getElementById('target-color');
+            const container = document.getElementById('color-buttons');
+            const hint = document.getElementById('hint-text');
+            container.innerHTML = "";
+            
+            const colors = Object.keys(colorNames);
+            rightColor = colors[Math.floor(Math.random() * colors.length)];
+            box.style.backgroundColor = rightColor;
+            
+            const fakeTextKey = colors[Math.floor(Math.random() * colors.length)];
+            const fakeColorKey = colors[Math.floor(Math.random() * colors.length)];
+            hint.innerText = colorNames[fakeTextKey];
+            hint.style.color = fakeColorKey;
+
+            colors.forEach(c => {
+                const b = document.createElement('button');
+                b.className = 'color-btn';
+                b.style.backgroundColor = c;
+                b.onclick = () => {
+                    // Просто инкрементируем или сбрасываем локальный счет, чат не трогаем
+                    if (c === rightColor) {
+                        colorScore++;
+                    } else {
+                        colorScore = 0;
+                    }
+                    document.getElementById('color-score').innerText = "Комбо: " + colorScore;
+                    initColorGame();
+                };
+                container.appendChild(b);
+            });
+        }
     </script>
 </body>
 </html>
