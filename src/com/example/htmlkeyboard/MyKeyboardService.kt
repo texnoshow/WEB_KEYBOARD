@@ -5,7 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.View
-import android.webkit.JavascriptInterface
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.Button
 import android.widget.FrameLayout
@@ -16,15 +16,13 @@ class MyKeyboardService : InputMethodService() {
     private lateinit var layout: LinearLayout
     private var lang = "RU"
     private var shift = false
-    private var symbolMode = false // Флаг режима цифр и спецсимволов
+    private var symbolMode = false
 
-    // Основные раскладки
     private val layouts = mapOf(
         "RU" to listOf(listOf("й","ц","у","к","е","н","г","ш","щ","з","х","ъ"), listOf("ф","ы","в","а","п","р","о","л","д","ж","э"), listOf("⇧","я","ч","с","м","и","т","ь","б","ю","⌫"), listOf("🌐","Пробел","Enter")),
         "EN" to listOf(listOf("q","w","e","r","t","y","u","i","o","p"), listOf("a","s","d","f","g","h","j","k","l"), listOf("⇧","z","x","c","v","b","n","m","⌫"), listOf("🌐","Пробел","Enter"))
     )
 
-    // Отдельная нативная панель цифр и спецсимволов
     private val symbolLayout = listOf(
         listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"),
         listOf("-", "/", ":", ";", "(", ")", "₽", "&", "@", "\""),
@@ -50,7 +48,17 @@ class MyKeyboardService : InputMethodService() {
         webView = WebView(this).apply {
             layoutParams = FrameLayout.LayoutParams(-1, (45 * density).toInt(), Gravity.TOP)
             isFocusable = false; clearFocus()
-            settings.javaScriptEnabled = true; settings.allowFileAccess = true
+            
+            // ЖЕСТКИЙ СБРОС КЭША ДЛЯ БОРЬБЫ СО СТАРЫМ ИНТЕРФЕЙСОМ
+            clearCache(true)
+            
+            settings.javaScriptEnabled = true
+            settings.allowFileAccess = true
+            settings.domStorageEnabled = true
+            
+            // Отключаем кэширование на уровне настроек WebView
+            settings.cacheMode = WebSettings.LOAD_NO_CACHE
+            
             addJavascriptInterface(this@MyKeyboardService, "AndroidKeyboard")
         }
         container.addView(webView)
@@ -63,8 +71,6 @@ class MyKeyboardService : InputMethodService() {
         layout.removeAllViews()
         val isTab = resources.configuration.screenWidthDp >= 600
         val m = if (isTab) 4 else 2
-
-        // Выбираем, какую сетку кнопок отрисовать
         val currentRows = if (symbolMode) symbolLayout else layouts[lang]!!
 
         for (rowKeys in currentRows) {
@@ -90,7 +96,6 @@ class MyKeyboardService : InputMethodService() {
             "Пробел" -> ic.commitText(" ", 1)
             "⇧" -> { shift = !shift; renderKeys() }
             "🌐" -> { 
-                // Если мы в символьном режиме, кнопка глобуса просто возвращает нас к буквам
                 if (symbolMode) {
                     symbolMode = false
                     webView?.evaluateJavascript("updateSymbolButtonState(false);", null)
@@ -104,16 +109,8 @@ class MyKeyboardService : InputMethodService() {
         }
     }
 
-    // Вызывается из JavaScript при клике на кнопку цифр/символов
-    @JavascriptInterface 
-    fun toggleSymbolMode(enable: Boolean) {
-        Handler(Looper.getMainLooper()).post {
-            symbolMode = enable
-            renderKeys()
-        }
-    }
-
     @JavascriptInterface fun commitText(t: String) { Handler(Looper.getMainLooper()).post { currentInputConnection?.commitText(t, 1) } }
+    @JavascriptInterface fun toggleSymbolMode(enable: Boolean) { Handler(Looper.getMainLooper()).post { symbolMode = enable; renderKeys() } }
     @JavascriptInterface fun toggleWidgetView(ex: Boolean) {
         Handler(Looper.getMainLooper()).post {
             val p = webView?.layoutParams as? FrameLayout.LayoutParams ?: return@post
